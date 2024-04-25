@@ -22,6 +22,11 @@ struct Pothole {
 	float verticalAxis; // Vertical axis length of the pothole
 };
 
+struct orange {
+	float x;
+	float y;
+};
+
 struct Slab {
 	float x;// x-coordinate of the slab
 	float y;
@@ -34,6 +39,7 @@ Slab slab = { 800.0, 500.0, 10.0, 450.0 };
 vector<Rectangle> rectangles;// Vector to store multiple rectangles
 vector<Clouds> cloud;
 Pothole pothole = { 1800.0, 340.0, 40.0, 30.0 };
+vector<orange> org;
 
 float cartY = 360.0; // Initial y-coordinate of the cart
 bool gameOver = false;
@@ -296,6 +302,13 @@ void drawCart(float x, float y)
 	glEnd();
 
 }
+void draworange(float x, float y)
+{
+	glColor3f(1, 0.5, 0);
+	drawCircle(x, y, 10);
+	glColor3f(0, 0.6, 0);
+	thickLine(x, y + 10, x + 10, y + 10, 2);
+}
 
 void keyboard(unsigned char key, int x, int y) {
 	if (key == ' ' && !isJumping && !gameOver && cartY == 360) { // Check if spacebar is pressed and cart is not already jumping
@@ -355,6 +368,13 @@ void updateSlabPosition() {
 	if (slab.x < -slab.length) // Check if the slab has crossed the left edge
 		slab.x = 2000.0; // Move the slab to the right edge
 }
+void updateorgposition() {
+	for (auto& orng : org) {
+		orng.x -= speed; // Move the rectangle to the left
+		if (orng.x < -100.0) // Check if the rectangle has crossed the left edge
+			orng.x = 2000.0; // Move the rectangle to the right edge
+	}
+}
 
 bool checkCollision(float cartX) {
 	float ellipseX = pothole.horizontalAxis;
@@ -373,6 +393,21 @@ bool checkCollision(float cartX) {
 		isOnSlab = true;
 	}
 	return leftdiff <= 1 || rightdiff <= 1 || (xDiff2 >= slab.x && xDiff2 <= slab.x + slab.length && yDiff - 15 < slab.y && yDiff + 115 > slab.y);
+}
+
+bool checkfruitcoll(float cartX)
+{
+	for (auto& orng : org)
+	{
+		float orgrsq = 100;
+		float xDiff1 = cartX - 50;
+		float xDiff2 = cartX + 50;
+		float yDiff = cartY - 15;
+		float leftdiff = ((xDiff1 - orng.x) * (xDiff1 - orng.x)) / orgrsq + ((yDiff - orng.y) * (yDiff - orng.y)) / orgrsq;
+		float rightdiff = ((xDiff2 - orng.x) * (xDiff2 - orng.x)) / orgrsq + ((yDiff - orng.y) * (yDiff - orng.y)) / orgrsq;
+		return leftdiff <= 1 || rightdiff <= 1;
+	}
+	
 }
 
 void drawStrokeText(float x, float y, float scale, const char* text) {
@@ -465,6 +500,12 @@ void display()
 		}
 		glColor3f(0.9, 0.9, 0);
 
+		for (const auto& orng : org)
+		{
+			draworange(orng.x, orng.y);
+		}
+		
+
 		if (isOnSlab) {
 			drawCart(150, 530);
 		}
@@ -480,12 +521,17 @@ void display()
 		//slab
 		drawSlab(slab.x, slab.y, slab.width, slab.length);
 
+		if (checkfruitcoll)
+		{
+			score += 100;
+		}
 
 		if (checkCollision(150.0)) { // Assuming cart's x-coordinate is 150.0
 			// Stop the game if collision occurs
 			cout << "Game Over - You hit an obstacle!" << endl;
 			gameOver = true;
 		}
+
 		glColor3f(1, 1, 0);
 		drawquad(80, 970, 80, 130);
 		string sc = to_string(score);
@@ -525,6 +571,7 @@ void update(int value)
 
 		updatePotholePosition();
 		updateSlabPosition();
+		updateorgposition();
 		speed = speed + 0.005;
 		score += 1;
 
@@ -544,6 +591,12 @@ int main(int argc, char** argv)
 		Rectangle rect;
 		rect.x = 100.0 + i * 150.0; // Initial x-coordinate
 		rectangles.push_back(rect);
+	}
+	for (int i = 0; i < 3; ++i) {
+		orange orng;
+		orng.x = slab.x + 200 + i * 150.0;// Initial x-coordinate
+		orng.y = 515;
+		org.push_back(orng);
 	}
 	float arr[5][3] = { {800,800,0.8}, {200, 750, 0.9}, {1100, 750, 0.75}, {1450, 900, 0.9}, {1700, 850, 0.85} };
 	for (int i = 0; i < 5; ++i) {
