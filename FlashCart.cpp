@@ -10,6 +10,10 @@ struct Rectangle {
 	float x; // x-coordinate of the rectangle
 };
 
+struct Mall {
+	float x;
+};
+
 struct Clouds {
 	float x;
 	float y;
@@ -25,6 +29,7 @@ struct Pothole {
 struct orange {
 	float x;
 	float y;
+	bool collected;
 };
 
 struct Slab {
@@ -34,11 +39,11 @@ struct Slab {
 	int length;
 };
 
-Slab slab = { 800.0, 500.0, 10.0, 450.0 };
-
+Slab slab = { 2300.0, 500.0, 10.0, 450.0 };
+Mall mall = { 0 };
 vector<Rectangle> rectangles;// Vector to store multiple rectangles
 vector<Clouds> cloud;
-Pothole pothole = { 1800.0, 340.0, 40.0, 30.0 };
+Pothole pothole = { 2400.0, 340.0, 40.0, 30.0 };
 vector<orange> org;
 
 float cartY = 360.0; // Initial y-coordinate of the cart
@@ -62,14 +67,16 @@ void resetGame() {
 	// Reset cart position
 	cartY = 360.0;
 	// Reset slab position
-	slab.x = 500.0;
+	slab.x = 1800.0;
 	// Reset pothole position
-	pothole.x = 1500.0;
+	pothole.x = 1900.0;
+	mall.x = 0;
 	// Reset jumping flags
 	isJumping = false;
 	isOnSlab = false;
 	// Reset game over flag
 	gameOver = false;
+
 }
 
 void setPixel(GLint x, GLint y)
@@ -113,6 +120,7 @@ void thickLine(int x1, int y1, int x2, int y2, int thickness) {
 	glVertex2f(x2 - offsetX, y2 - offsetY);
 	glEnd();
 }
+
 void mpCircle(int centerX, int centerY, int radius) {
 	int x = radius;
 	int y = 0;
@@ -151,6 +159,67 @@ void mpCircle(int centerX, int centerY, int radius) {
 	}
 }
 
+void drawMall(float x)
+{
+	int width = 1000;
+	int pilwid = 10;
+	glColor3f(0.9, 0, 1.0);
+	glBegin(GL_POLYGON);
+	glVertex2f(x, 500);
+	glVertex2f(x + width, 500);
+	glVertex2f(x + width, 1000);
+	glVertex2f(x, 1000);
+	glEnd();
+	
+
+	for (int i = 0; i < 6; i++)
+	{
+		glColor3f(0.9, 0, 1);
+		int place = 200 * i;
+		glBegin(GL_POLYGON);
+		glVertex2f(x + place - pilwid, 500);
+		glVertex2f(x + place, 500);
+		glVertex2f(x + place, 350);
+		glVertex2f(x + place - pilwid, 350);
+		glEnd();
+		glColor3f(0, 0, 0);
+		thickLine(x + place - pilwid, 500, x + place - pilwid, 350, 2);
+		thickLine(x + place - pilwid - 200, 350, x + place - pilwid, 350, 2);
+	}
+	glColor3f(0.9, 0, 1);
+	glBegin(GL_POLYGON);
+	glVertex2f(x, 350);
+	glVertex2f(x + width, 350);
+	glVertex2f(x + width, 300);
+	glVertex2f(x, 300);
+	glEnd();
+	glColor3f(0, 0, 0);
+	thickLine(x, 500, x + width, 500, 2);
+	thickLine(x + width, 1000, x + width, 300, 2);
+	thickLine(x, 300, x + width, 300, 2);
+	//M
+	thickLine(x + 800, 875, x + 800, 950, 10);
+	thickLine(x + 900, 875, x + 900, 950, 10);
+	thickLine(x + 845, 880, x + 900, 950, 10);
+	thickLine(x + 855, 880, x + 800, 950, 10);
+	//A
+	thickLine(x + 800, 775, x + 850, 850, 10);
+	thickLine(x + 900, 775, x + 850, 850, 10);
+	thickLine(x + 815, 800, x + 885, 800, 10);
+	//L
+	thickLine(x + 805, 675, x + 805, 750, 10);
+	thickLine(x + 800, 675, x + 900, 675, 10);
+	//L
+	thickLine(x + 805, 575, x + 805, 650, 10);
+	thickLine(x + 800, 575, x + 900, 575, 10);
+
+
+
+
+
+
+}
+
 void drawGradientCircle(int centerX, int centerY, int radius) {
 	// Iterate over each pixel in the circle
 	for (int y = centerY - radius; y <= centerY + radius; ++y) {
@@ -161,9 +230,9 @@ void drawGradientCircle(int centerX, int centerY, int radius) {
 				// Calculate gradient factor based on distance from the center
 				float gradientFactor = distance / radius;
 				// Interpolate color from orange to yellow based on gradient factor
-				float red = 1.0 - (0.471*gradientFactor);
-				float green = 1.0 - (0.192*gradientFactor);
-				float blue = 0.922*gradientFactor;
+				float red = 1.0 - (0.471 * gradientFactor);
+				float green = 1.0 - (0.192 * gradientFactor);
+				float blue = 0.922 * gradientFactor;
 				// Set the color for the current pixel
 				glColor3f(red, green, blue);
 				// Draw the pixel
@@ -174,6 +243,7 @@ void drawGradientCircle(int centerX, int centerY, int radius) {
 		}
 	}
 }
+
 void drawCircle(float x, float y, float radius) {
 	glBegin(GL_TRIANGLE_FAN);
 	for (float angle = 0.0f; angle <= 360.0f; angle += 5.0f) {
@@ -182,6 +252,7 @@ void drawCircle(float x, float y, float radius) {
 	}
 	glEnd();
 }
+
 void drawEllipse(float centerX, float centerY, float horizontalAxis, float verticalAxis) {
 	glBegin(GL_POLYGON);
 	for (int i = 0; i < 360; i++) {
@@ -192,6 +263,62 @@ void drawEllipse(float centerX, float centerY, float horizontalAxis, float verti
 	}
 	glEnd();
 }
+
+void mpEllipse(int centerX, int centerY, int horizontalAxis, int verticalAxis) {
+	int x = 0;
+	int y = verticalAxis;
+	int horizontalAxisSquare = horizontalAxis * horizontalAxis;
+	int verticalAxisSquare = verticalAxis * verticalAxis;
+	int xChange = 2 * verticalAxisSquare * x;
+	int yChange = 2 * horizontalAxisSquare * y;
+	int err = horizontalAxisSquare - horizontalAxis * verticalAxisSquare + (0.25 * verticalAxisSquare);
+
+	glBegin(GL_POINTS);
+	glVertex2i(centerX + x, centerY + y);
+	glVertex2i(centerX - x, centerY + y);
+	glVertex2i(centerX + x, centerY - y);
+	glVertex2i(centerX - x, centerY - y);
+
+	while (xChange < yChange) {
+		x++;
+		xChange += 2 * verticalAxisSquare;
+		if (err < 0) {
+			err += xChange + verticalAxisSquare;
+		}
+		else {
+			y--;
+			yChange -= 2 * horizontalAxisSquare;
+			err += xChange - yChange + verticalAxisSquare;
+		}
+
+		glVertex2i(centerX + x, centerY + y);
+		glVertex2i(centerX - x, centerY + y);
+		glVertex2i(centerX + x, centerY - y);
+		glVertex2i(centerX - x, centerY - y);
+	}
+
+	// Region 2
+	err = horizontalAxisSquare * (x + 0.5) * (x + 0.5) + verticalAxisSquare * (y - 1) * (y - 1) - horizontalAxisSquare * verticalAxisSquare;
+	while (y > 0) {
+		y--;
+		yChange -= 2 * horizontalAxisSquare;
+		if (err > 0) {
+			err += horizontalAxisSquare - yChange;
+		}
+		else {
+			x++;
+			xChange += 2 * verticalAxisSquare;
+			err += xChange - yChange + horizontalAxisSquare;
+		}
+
+		glVertex2i(centerX + x, centerY + y);
+		glVertex2i(centerX - x, centerY + y);
+		glVertex2i(centerX + x, centerY - y);
+		glVertex2i(centerX - x, centerY - y);
+	}
+	glEnd();
+}
+
 void drawClouds(float x, float y, float clrint) {
 
 	glColor3f(clrint, clrint, clrint);
@@ -199,10 +326,10 @@ void drawClouds(float x, float y, float clrint) {
 	// Draw multiple circles to create the cloud shape
 	// Adjust the positions and sizes to your liking
 	drawCircle(x, y, 50);
-	drawCircle(x+50,y+25, 60);
-	drawCircle(x+70, y-20, 70);
-	drawCircle(x+120, y+10, 60);
-	drawCircle(x+160, y-10, 50);
+	drawCircle(x + 50, y + 25, 60);
+	drawCircle(x + 70, y - 20, 70);
+	drawCircle(x + 120, y + 10, 60);
+	drawCircle(x + 160, y - 10, 50);
 }
 void drawquad(float x, float y, int width, int length)
 {
@@ -223,9 +350,9 @@ void drawSlab(float x, float y, int width, int length)
 	glColor3f(0.9, 0.3, 0.3);
 	glBegin(GL_POLYGON);
 	glVertex2f(x, y);
-	glVertex2f(x+length, y);
-	glVertex2f(x+length, y-width);
-	glVertex2f(x, y-width);
+	glVertex2f(x + length, y);
+	glVertex2f(x + length, y - width);
+	glVertex2f(x, y - width);
 	glEnd();
 	glColor3f(0, 0, 0);
 	thickLine(x, y, x + length, y, 2);
@@ -238,7 +365,7 @@ void drawSlab(float x, float y, int width, int length)
 void drawCart(float x, float y)
 {
 
-	glColor3f(1, 0 ,0);
+	glColor3f(1, 0, 0);
 	glBegin(GL_QUADS);
 	//cart
 	glVertex2f(x - 75, y + 100);
@@ -255,21 +382,21 @@ void drawCart(float x, float y)
 	thickLine(x - 75, y + 100, x - 50, y, 2);
 	// Draw right side line
 	thickLine(x + 75, y + 100, x + 50, y, 2);
-	glColor3f(0,0,0);
+	glColor3f(0, 0, 0);
 	//cart wheels
-	drawCircle(x - 40, y-15, 15);
-	drawCircle(x + 40, y-15, 15);
-	glColor3f(0,0,0);
+	drawCircle(x - 40, y - 15, 15);
+	drawCircle(x + 40, y - 15, 15);
+	glColor3f(0, 0, 0);
 	//cart handle
-	thickLine(x - 75, y + 100, x - 90, y + 100,2);
-	thickLine(x - 85, y + 90, x - 95, y + 110,2);
+	thickLine(x - 75, y + 100, x - 90, y + 100, 2);
+	thickLine(x - 85, y + 90, x - 95, y + 110, 2);
 	// lightning bolt
 	glColor3f(1, 1, 0);
 	glBegin(GL_LINE_LOOP);
 	glVertex2f(x + 10, y + 80);
 	glVertex2f(x, y + 60);
 	glVertex2f(x + 25, y + 60);
-	glVertex2f(x -10, y + 20);
+	glVertex2f(x - 10, y + 20);
 	glVertex2f(x, y + 45);
 	glVertex2f(x - 25, y + 45);
 	glVertex2f(x + 10, y + 80);
@@ -282,11 +409,11 @@ void drawCart(float x, float y)
 	glBegin(GL_TRIANGLES);
 	glVertex2f(x + 10, y + 80);
 	glVertex2f(x - 7.5, y + 45);
-	glVertex2f(x -25 , y + 45);
+	glVertex2f(x - 25, y + 45);
 
 	glBegin(GL_TRIANGLES);
-	glVertex2f(x - 10 , y + 20);
-	glVertex2f(x + 25 , y + 60);
+	glVertex2f(x - 10, y + 20);
+	glVertex2f(x + 25, y + 60);
 	glVertex2f(x + 6, y + 60);
 
 	glBegin(GL_TRIANGLES);
@@ -308,6 +435,7 @@ void draworange(float x, float y)
 	drawCircle(x, y, 10);
 	glColor3f(0, 0.6, 0);
 	thickLine(x, y + 10, x + 10, y + 10, 2);
+	thickLine(x, y + 10, x + 8, y + 15, 2);
 }
 
 void keyboard(unsigned char key, int x, int y) {
@@ -322,7 +450,7 @@ void keyboard(unsigned char key, int x, int y) {
 }
 
 void performJumpAnimation() {
-	if (!isOnSlab) 
+	if (!isOnSlab)
 	{
 		if (isJumping) {
 			cartY += 6.0; // Increment cart's y-coordinate to move it upward
@@ -341,7 +469,7 @@ void updateroadstripPosition()
 {
 	for (auto& rectangle : rectangles) {
 		rectangle.x -= speed; // Move the rectangle to the left
-		if (rectangle.x < -50.0) // Check if the rectangle has crossed the left edge
+		if (rectangle.x < -60.0) // Check if the rectangle has crossed the left edge
 			rectangle.x = 1900.0; // Move the rectangle to the right edge
 	}
 }
@@ -358,7 +486,9 @@ void updatePotholePosition() {
 	if (pothole.x < -50.0) // Check if the pothole has crossed the left edge
 		pothole.x = 2000.0; // Move the pothole to the right edge
 }
-
+void updateMallPosition() {
+	mall.x -= speed;
+}
 void updateSlabPosition() {
 	slab.x -= speed; // Move the slab to the left
 	if (slab.x + slab.length <= 80)
@@ -397,24 +527,30 @@ bool checkCollision(float cartX) {
 
 bool checkfruitcoll(float cartX)
 {
+	bool collisionDetected = false; // Flag to track if any collision is detected
 	for (auto& orng : org)
 	{
-		float orgrsq = 100;
-		float xDiff1 = cartX - 50;
-		float xDiff2 = cartX + 50;
-		float yDiff = cartY - 15;
-		float leftdiff = ((xDiff1 - orng.x) * (xDiff1 - orng.x)) / orgrsq + ((yDiff - orng.y) * (yDiff - orng.y)) / orgrsq;
-		float rightdiff = ((xDiff2 - orng.x) * (xDiff2 - orng.x)) / orgrsq + ((yDiff - orng.y) * (yDiff - orng.y)) / orgrsq;
-		return leftdiff <= 1 || rightdiff <= 1;
+		if (!orng.collected) { // Check if the orange has not been collected yet
+			float orgrsq = 100;
+			float xDiff1 = cartX - 50;
+			float xDiff2 = cartX + 50;
+			float yDiff = cartY - 15;
+			float leftdiff = ((xDiff1 - orng.x) * (xDiff1 - orng.x)) / orgrsq + ((yDiff - orng.y) * (yDiff - orng.y)) / orgrsq;
+			float rightdiff = ((xDiff2 - orng.x) * (xDiff2 - orng.x)) / orgrsq + ((yDiff - orng.y) * (yDiff - orng.y)) / orgrsq;
+			if (leftdiff <= 1 || rightdiff <= 1) {
+				orng.collected = true; // Mark the orange as collected
+				collisionDetected = true; // Set collision flag to true
+			}
+		}
 	}
-	
+	return collisionDetected; // Return whether any collision is detected
 }
 
 void drawStrokeText(float x, float y, float scale, const char* text) {
 	glPushMatrix();
 	glTranslatef(x, y, 0);
-	glScalef(scale, scale,1);
-	
+	glScalef(scale, scale, 1);
+
 	// Set the desired font (available fonts are GLUT_STROKE_ROMAN, GLUT_STROKE_MONO_ROMAN)
 	void* font = GLUT_STROKE_ROMAN;
 	// Loop through each character in the text
@@ -450,114 +586,122 @@ void display()
 	glClear(GL_COLOR_BUFFER_BIT);
 	glColor3f(1.0, 0.0, 0.0);
 	glPointSize(2.0);
-		glColor3f(0.588, 0.294, 0); // Set color to brown
-		//ground
-		glBegin(GL_QUADS);
-		glVertex2f(0, 240); // Top-left corner
-		glVertex2f(1900, 240); // Top-right corner
-		glVertex2f(1900, 0); // Bottom-right corner
-		glVertex2f(0, 0); // Bottom-left corner
+	glColor3f(0.588, 0.294, 0); // Set color to brown
+	//ground
+	glBegin(GL_QUADS);
+	glVertex2f(0, 240); // Top-left corner
+	glVertex2f(1900, 240); // Top-right corner
+	glVertex2f(1900, 0); // Bottom-right corner
+	glVertex2f(0, 0); // Bottom-left corner
+	glEnd();
+
+	//ground to grass gradient
+	glBegin(GL_QUADS);
+	glColor3f(0.0, 1.0, 0.0); // Green color (top)
+	glVertex2f(0, 290);
+	glVertex2f(1900, 290);
+	glColor3f(0.588, 0.294, 0); // Brown color (bottom)
+	glVertex2f(1900, 240.0);
+	glVertex2f(0, 240.0);
+	glEnd();
+
+	//road
+	glColor3f(0.5, 0.5, 0.5);
+	glBegin(GL_QUADS);
+	glVertex2f(0, 380); // Top-left corner
+	glVertex2f(1900, 380); // Top-right corner
+	glVertex2f(1900, 290); // Bottom-right corner
+	glVertex2f(0, 290); // Bottom-left corner
+	glEnd();
+
+	//sun
+	drawGradientCircle(1500, 800, 80);
+	glColor3f(1, 1, 0);
+	drawCircle(1500, 800, 50);
+
+	//clouds
+	for (const auto& clouds : cloud) {
+		drawClouds(clouds.x, clouds.y, clouds.clrint);
 		glEnd();
-
-		//ground to grass gradient
+	}
+	//road strips
+	glColor3f(1.0, 1.0, 1.0); // White color
+	for (const auto& rectangle : rectangles) {
 		glBegin(GL_QUADS);
-		glColor3f(0.0, 1.0, 0.0); // Green color (top)
-		glVertex2f(0, 290);
-		glVertex2f(1900, 290);
-		glColor3f(0.588, 0.294, 0); // Brown color (bottom)
-		glVertex2f(1900, 240.0);
-		glVertex2f(0, 240.0);
+		glVertex2f(rectangle.x, 330.0);
+		glVertex2f(rectangle.x + 50.0, 330.0);
+		glVertex2f(rectangle.x + 50.0, 340.0);
+		glVertex2f(rectangle.x, 340.0);
 		glEnd();
+	}
+	glColor3f(0.9, 0.9, 0);
 
-		//road
-		glColor3f(0.5, 0.5, 0.5);
-		glBegin(GL_QUADS);
-		glVertex2f(0, 380); // Top-left corner
-		glVertex2f(1900, 380); // Top-right corner
-		glVertex2f(1900, 290); // Bottom-right corner
-		glVertex2f(0, 290); // Bottom-left corner
-		glEnd();
-
-		//sun
-		drawGradientCircle(1500, 800, 80);
-		glColor3f(1, 1, 0);
-		drawCircle(1500, 800, 50);
-
-		//clouds
-		for (const auto& clouds : cloud) {
-			drawClouds(clouds.x, clouds.y, clouds.clrint);
-			glEnd();
+	for (const auto& orng : org)
+	{
+		if (!orng.collected) { // Check if the orange has not been collected
+			draworange(orng.x, orng.y); // Draw the orange
 		}
-		//road strips
-		glColor3f(1.0, 1.0, 1.0); // White color
-		for (const auto& rectangle : rectangles) {
-			glBegin(GL_QUADS);
-			glVertex2f(rectangle.x, 330.0);
-			glVertex2f(rectangle.x + 50.0, 330.0);
-			glVertex2f(rectangle.x + 50.0, 340.0);
-			glVertex2f(rectangle.x, 340.0);
-			glEnd();
-		}
-		glColor3f(0.9, 0.9, 0);
+	}
 
-		for (const auto& orng : org)
-		{
-			draworange(orng.x, orng.y);
-		}
-		
-
-		if (isOnSlab) {
-			drawCart(150, 530);
-		}
-		else {
-			drawCart(150, cartY);
-		}
-
-		glColor3f(0, 0, 0); // Black color for the pothole
-		drawEllipse(pothole.x, pothole.y, pothole.horizontalAxis, pothole.verticalAxis);
-		glColor3f(0.6, 0.6, 0.6);
-		drawEllipse(pothole.x+35, pothole.y-5, pothole.horizontalAxis, pothole.verticalAxis);
-
-		//slab
-		drawSlab(slab.x, slab.y, slab.width, slab.length);
-
-		if (checkfruitcoll)
-		{
-			score += 100;
-		}
-
-		if (checkCollision(150.0)) { // Assuming cart's x-coordinate is 150.0
-			// Stop the game if collision occurs
-			cout << "Game Over - You hit an obstacle!" << endl;
-			gameOver = true;
-		}
-
-		glColor3f(1, 1, 0);
-		drawquad(80, 970, 80, 130);
-		string sc = to_string(score);
-		string hsc;
-		if (score < 1986)
-		{
-			hsc = "HS: 1986";
-		}
-		else
-			hsc = sc;
-		glColor3f(0, 0, 0);
-		drawBitmapText(hsc.c_str(), 100, 940);
-		drawBitmapText(sc.c_str(), 100, 900);
-
-		if (gameOver) {
-			glColor3f(1, 1, 1);
-			drawquad(450, 620, 200, 1050);
-			glColor3f(0, 0, 0); // black color for the "Game Over" message
-			drawStrokeTextandscore(550, 550, 0.5, "Game Over - Score:", score);
-			drawStrokeText(650, 450, 0.4, "Press Enter to Retry");
-			speed = 4.0;
-			score = 0;
-		}
-
-		glFlush();
 	
+
+	if (isOnSlab) {
+		drawCart(150, 530);
+	}
+	else {
+		drawCart(150, cartY);
+	}
+
+	//mall
+	if (mall.x > -1000) {
+		drawMall(mall.x);
+	}
+	
+
+	glColor3f(0, 0, 0); // Black color for the pothole
+	drawEllipse(pothole.x, pothole.y, pothole.horizontalAxis, pothole.verticalAxis);
+	glColor3f(0.6, 0.6, 0.6);
+	drawEllipse(pothole.x + 35, pothole.y - 5, pothole.horizontalAxis, pothole.verticalAxis);
+	glColor3f(0, 0, 0);
+	mpEllipse(pothole.x + 35, pothole.y - 5, pothole.horizontalAxis - 5, pothole.verticalAxis - 5);
+
+	//slab
+	drawSlab(slab.x, slab.y, slab.width, slab.length);
+
+	
+
+	if (checkCollision(150.0)) { // Assuming cart's x-coordinate is 150.0
+		// Stop the game if collision occurs
+		cout << "Game Over - You hit an obstacle!" << endl;
+		gameOver = true;
+	}
+
+	glColor3f(1, 1, 0);
+	drawquad(80, 970, 80, 130);
+	string sc = to_string(score);
+	string hsc;
+	if (score < 3012)
+	{
+		hsc = "HS: 3012";
+	}
+	else
+		hsc = sc;
+	glColor3f(0, 0, 0);
+	drawBitmapText(hsc.c_str(), 100, 940);
+	drawBitmapText(sc.c_str(), 100, 900);
+
+	if (gameOver) {
+		glColor3f(1, 1, 1);
+		drawquad(450, 620, 200, 1050);
+		glColor3f(0, 0, 0); // black color for the "Game Over" message
+		drawStrokeTextandscore(550, 550, 0.5, "Game Over - Score:", score);
+		drawStrokeText(650, 450, 0.4, "Press Enter to Retry");
+		speed = 4.0;
+		score = 0;
+	}
+
+	glFlush();
+
 }
 
 void update(int value)
@@ -568,13 +712,15 @@ void update(int value)
 		// Update the position of each rectangle (road strips)
 		updateroadstripPosition();
 		updatecloudsPosition();
-
+		updateMallPosition();
 		updatePotholePosition();
 		updateSlabPosition();
 		updateorgposition();
 		speed = speed + 0.005;
 		score += 1;
-
+		if (checkfruitcoll(150.0)) { // Assuming cart's x-coordinate is 150.0
+			score += 100; // Increase score by 100 if collision with orange occurs
+		}
 		glutPostRedisplay(); // Update the display
 	}
 
@@ -584,7 +730,7 @@ void update(int value)
 int main(int argc, char** argv)
 {
 	glutInit(&argc, argv);
-	glutInitWindowSize(1900,1000);
+	glutInitWindowSize(1900, 1000);
 	glutInitWindowPosition(10, 10);
 	glutCreateWindow("Flash Cart");
 	for (int i = 0; i < 13; ++i) {
@@ -595,7 +741,7 @@ int main(int argc, char** argv)
 	for (int i = 0; i < 3; ++i) {
 		orange orng;
 		orng.x = slab.x + 200 + i * 150.0;// Initial x-coordinate
-		orng.y = 515;
+		orng.y = 530;
 		org.push_back(orng);
 	}
 	float arr[5][3] = { {800,800,0.8}, {200, 750, 0.9}, {1100, 750, 0.75}, {1450, 900, 0.9}, {1700, 850, 0.85} };
