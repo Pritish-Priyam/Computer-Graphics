@@ -5,6 +5,9 @@
 #include <math.h>
 #include <string>
 using namespace std;
+#include <cstdlib> // For rand() function
+#include <ctime>   // For time() function
+
 
 struct Rectangle {
 	float x; // x-coordinate of the rectangle
@@ -71,6 +74,12 @@ void resetGame() {
 	// Reset pothole position
 	pothole.x = 1900.0;
 	mall.x = 0;
+	for (size_t i = 0; i < org.size(); ++i) {
+		auto& orng = org[i];
+		orng.x = slab.x + 200 + i * 150.0;// Initial x-coordinate
+		orng.y = 570;
+		orng.collected = false;
+	}
 	// Reset jumping flags
 	isJumping = false;
 	isOnSlab = false;
@@ -163,7 +172,7 @@ void drawMall(float x)
 {
 	int width = 1000;
 	int pilwid = 10;
-	glColor3f(0.9, 0, 1.0);
+	glColor3f(0.7, 0, 0.7);
 	glBegin(GL_POLYGON);
 	glVertex2f(x, 500);
 	glVertex2f(x + width, 500);
@@ -174,7 +183,7 @@ void drawMall(float x)
 
 	for (int i = 0; i < 6; i++)
 	{
-		glColor3f(0.9, 0, 1);
+		glColor3f(0.7, 0, 0.7);
 		int place = 200 * i;
 		glBegin(GL_POLYGON);
 		glVertex2f(x + place - pilwid, 500);
@@ -186,7 +195,7 @@ void drawMall(float x)
 		thickLine(x + place - pilwid, 500, x + place - pilwid, 350, 2);
 		thickLine(x + place - pilwid - 200, 350, x + place - pilwid, 350, 2);
 	}
-	glColor3f(0.9, 0, 1);
+	glColor3f(0.7, 0, 0.7);
 	glBegin(GL_POLYGON);
 	glVertex2f(x, 350);
 	glVertex2f(x + width, 350);
@@ -271,7 +280,7 @@ void mpEllipse(int centerX, int centerY, int horizontalAxis, int verticalAxis) {
 	int verticalAxisSquare = verticalAxis * verticalAxis;
 	int xChange = 2 * verticalAxisSquare * x;
 	int yChange = 2 * horizontalAxisSquare * y;
-	int err = horizontalAxisSquare - horizontalAxis * verticalAxisSquare + (0.25 * verticalAxisSquare);
+	int err = horizontalAxisSquare - verticalAxisSquare * horizontalAxis + 0.25 * verticalAxisSquare;
 
 	glBegin(GL_POINTS);
 	glVertex2i(centerX + x, centerY + y);
@@ -308,7 +317,7 @@ void mpEllipse(int centerX, int centerY, int horizontalAxis, int verticalAxis) {
 		else {
 			x++;
 			xChange += 2 * verticalAxisSquare;
-			err += xChange - yChange + horizontalAxisSquare;
+			err += xChange + horizontalAxisSquare;
 		}
 
 		glVertex2i(centerX + x, centerY + y);
@@ -318,6 +327,7 @@ void mpEllipse(int centerX, int centerY, int horizontalAxis, int verticalAxis) {
 	}
 	glEnd();
 }
+
 
 void drawClouds(float x, float y, float clrint) {
 
@@ -429,6 +439,7 @@ void drawCart(float x, float y)
 	glEnd();
 
 }
+
 void draworange(float x, float y)
 {
 	glColor3f(1, 0.5, 0);
@@ -436,6 +447,10 @@ void draworange(float x, float y)
 	glColor3f(0, 0.6, 0);
 	thickLine(x, y + 10, x + 10, y + 10, 2);
 	thickLine(x, y + 10, x + 8, y + 15, 2);
+}
+void paddy(float x, float y)
+{
+
 }
 
 void keyboard(unsigned char key, int x, int y) {
@@ -501,8 +516,13 @@ void updateSlabPosition() {
 void updateorgposition() {
 	for (auto& orng : org) {
 		orng.x -= speed; // Move the rectangle to the left
-		if (orng.x < -100.0) // Check if the rectangle has crossed the left edge
-			orng.x = 2000.0; // Move the rectangle to the right edge
+		if (orng.x < -50.0 && !orng.collected) // Check if the rectangle has crossed the left edge
+			orng.x = 2400.0; // Move the rectangle to the right edge
+		else if (orng.collected) 
+		{
+			orng.x = 2650.0;
+			orng.collected = false;
+		}
 	}
 }
 
@@ -531,13 +551,7 @@ bool checkfruitcoll(float cartX)
 	for (auto& orng : org)
 	{
 		if (!orng.collected) { // Check if the orange has not been collected yet
-			float orgrsq = 100;
-			float xDiff1 = cartX - 50;
-			float xDiff2 = cartX + 50;
-			float yDiff = cartY - 15;
-			float leftdiff = ((xDiff1 - orng.x) * (xDiff1 - orng.x)) / orgrsq + ((yDiff - orng.y) * (yDiff - orng.y)) / orgrsq;
-			float rightdiff = ((xDiff2 - orng.x) * (xDiff2 - orng.x)) / orgrsq + ((yDiff - orng.y) * (yDiff - orng.y)) / orgrsq;
-			if (leftdiff <= 1 || rightdiff <= 1) {
+			if (orng.x > cartX - 75 && orng.x < cartX + 75 && orng.y > cartY - 20 && orng.y < cartY + 100) {
 				orng.collected = true; // Mark the orange as collected
 				collisionDetected = true; // Set collision flag to true
 			}
@@ -614,6 +628,7 @@ void display()
 	glVertex2f(0, 290); // Bottom-left corner
 	glEnd();
 
+	
 	//sun
 	drawGradientCircle(1500, 800, 80);
 	glColor3f(1, 1, 0);
@@ -642,8 +657,12 @@ void display()
 			draworange(orng.x, orng.y); // Draw the orange
 		}
 	}
-
-	
+	//mall back wall
+	if (mall.x > -1000)
+	{
+		glColor3f(0.3, 0, 0.3);
+		drawquad(mall.x, 600, 300, 1000);
+	}
 
 	if (isOnSlab) {
 		drawCart(150, 530);
@@ -664,7 +683,8 @@ void display()
 	drawEllipse(pothole.x + 35, pothole.y - 5, pothole.horizontalAxis, pothole.verticalAxis);
 	glColor3f(0, 0, 0);
 	mpEllipse(pothole.x + 35, pothole.y - 5, pothole.horizontalAxis - 5, pothole.verticalAxis - 5);
-
+	mpEllipse(pothole.x + 35, pothole.y - 5, pothole.horizontalAxis, pothole.verticalAxis);
+	
 	//slab
 	drawSlab(slab.x, slab.y, slab.width, slab.length);
 
@@ -673,22 +693,24 @@ void display()
 	if (checkCollision(150.0)) { // Assuming cart's x-coordinate is 150.0
 		// Stop the game if collision occurs
 		cout << "Game Over - You hit an obstacle!" << endl;
+		cout << "Score: " << score << endl;
 		gameOver = true;
 	}
 
 	glColor3f(1, 1, 0);
 	drawquad(80, 970, 80, 130);
-	string sc = to_string(score);
+	string sco = to_string(score);
+	string sc = "HS: " + sco;
 	string hsc;
-	if (score < 3012)
+	if (score < 5245)
 	{
-		hsc = "HS: 3012";
+		hsc = "HS: 5245";
 	}
 	else
 		hsc = sc;
 	glColor3f(0, 0, 0);
 	drawBitmapText(hsc.c_str(), 100, 940);
-	drawBitmapText(sc.c_str(), 100, 900);
+	drawBitmapText(sco.c_str(), 100, 900);
 
 	if (gameOver) {
 		glColor3f(1, 1, 1);
@@ -741,7 +763,8 @@ int main(int argc, char** argv)
 	for (int i = 0; i < 3; ++i) {
 		orange orng;
 		orng.x = slab.x + 200 + i * 150.0;// Initial x-coordinate
-		orng.y = 530;
+		orng.y = 570;
+		orng.collected = false;
 		org.push_back(orng);
 	}
 	float arr[5][3] = { {800,800,0.8}, {200, 750, 0.9}, {1100, 750, 0.75}, {1450, 900, 0.9}, {1700, 850, 0.85} };
